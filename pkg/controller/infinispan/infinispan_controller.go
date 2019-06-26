@@ -238,6 +238,13 @@ func (r *ReconcileInfinispan) deploymentForInfinispan(m *infinispanv1.Infinispan
 	if mgmtPass == "" {
 		mgmtPass = "infinispan"
 	}
+
+	memory := "512Mi"
+
+	if m.Spec.Container.Memory != "" {
+		memory = m.Spec.Container.Memory
+	}
+
 	envVars := []corev1.EnvVar{{Name: getImageVarNameFromOperatorEnv("MGMT_USER"), Value: mgmtUser},
 		{Name: getImageVarNameFromOperatorEnv("MGMT_PASS"), Value: mgmtPass},
 		{Name: getImageVarNameFromOperatorEnv("APP_USER"), Value: appUser},
@@ -245,7 +252,8 @@ func (r *ReconcileInfinispan) deploymentForInfinispan(m *infinispanv1.Infinispan
 		{Name: "IMAGE", Value: m.Spec.Image},
 		{Name: "JGROUPS_PING_PROTOCOL", Value: getEnvWithDefault("JGROUPS_PING_PROTOCOL", defaultJGroupsPingProtocol)},
 		{Name: "OPENSHIFT_DNS_PING_SERVICE_NAME", Value: m.ObjectMeta.Name + "-ping"},
-		{Name: getImageVarNameFromOperatorEnv("NUMBER_OF_INSTANCE"), Value: string(m.Spec.Replicas)}}
+		{Name: getImageVarNameFromOperatorEnv("NUMBER_OF_INSTANCE"), Value: string(m.Spec.Replicas)},
+		{Name: getImageVarNameFromOperatorEnv("JAVA_OPTS_VARNAME"), Value: m.Spec.Container.JvmOptionsAppend}}
 	dep := &appsv1beta1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1beta1",
@@ -293,7 +301,7 @@ func (r *ReconcileInfinispan) deploymentForInfinispan(m *infinispanv1.Infinispan
 							SuccessThreshold:    1,
 							TimeoutSeconds:      80},
 						Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("0.5"),
-							"memory": resource.MustParse("512Mi")}},
+							"memory": resource.MustParse(memory)}},
 					}},
 				},
 			},
@@ -402,16 +410,23 @@ func (r *ReconcileInfinispan) serviceForDNSPing(m *infinispanv1.Infinispan) *cor
 	return service
 }
 
+var envVarName = map[string]string{"JAVA_OPTS_VARNAME": "JAVA_OPTS"}
+
 // getImageVarNameFromOperatorEnv maps default env var name to fit non default Infinispan image
 // The Infinispan operator is supposed to work with different
 // infinispan-based datagrid: these different flavors may need
 // different environment variables set. This function will do the operator/image mapping
-// relying on the environment: if "propName" env var is defined its value is
-// used as env var name in place of "propName"
+// relying on the environment:
+// if "propName" env var is defined its value is used env var name in place of "propName"
+// elseif envVarName[propName] exists then it's returned
+// else propName is returned
 func getImageVarNameFromOperatorEnv(propName string) string {
 	envVar, defined := os.LookupEnv(propName)
 	if defined {
 		return envVar
+	}
+	if val, ok := envVarName[propName]; ok {
+		return val
 	}
 	return propName
 }
@@ -427,7 +442,7 @@ func getEnvWithDefault(name, defVal string) string {
 // getEntryPointArgs returns the arguments for the image entrypoint command
 // Returns ENTRY_POINT_ARGS env var if defined otherwise the default value.
 // Dafault value is not an empty string, so if an empty string is needed it must
-// be exmplicltly passed to the operator (i.e. ENTRY_POINT_ARGS="")
+// be explicitly passed to the operator (i.e. ENTRY_POINT_ARGS="")
 func getEntryPointArgs(m *infinispanv1.Infinispan) []string {
 	envVar, defined := os.LookupEnv("ENTRY_POINT_ARGS")
 	if defined {
@@ -517,7 +532,18 @@ func appendVolumes(m *infinispanv1.Infinispan, dep *appsv1beta1.StatefulSet) {
 	}
 
 	vc := &dep.Spec.VolumeClaimTemplates
+
+	// The default value (usually 1Gi) is set by the operator enviroment var VOLUME_CLAIMS
+	// The user can override the size of the srv-data volume (if present)
+	// setting `infinispan.spec.container.storage` field.
+
 	for _, volClaim := range volumeClaims {
+		if volClaim.ObjectMeta.Name == "srv-data" && m.Spec.Container.Storage != "" {
+			if m.Spec.Container.Storage != "" {
+				size := resource.MustParse(m.Spec.Container.Storage)
+				volClaim.Spec.Resources.Requests["storage"] = size
+			}
+		}
 		*vc = append(*vc, volClaim)
 	}
 
