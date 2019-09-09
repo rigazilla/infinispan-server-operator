@@ -1,0 +1,59 @@
+#!/usr/bin/env groovy
+
+pipeline {
+    agent {
+        label 'slave-group-normal'
+    }
+
+    parameters {
+        string(name: 'releaseName', defaultValue: '', description: 'Image Artifacts Release version (blank to use existing release')
+        string(name: 'replacesReleaseName', defaultValue: '', description: 'Release of the operator to be replaced')
+        string(name: 'serverVersion', description: 'Version of Infinispan artifact to be used')
+        booleanParam(name: 'dryRun', defaultValue: true, description: 'If true, we don\'t push things around')
+        gitParameter(name: 'branch', defaultValue: 'origin/master', branchFilter: 'origin/(.*)', type: 'PT_BRANCH', description: 'Branch to release from')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                sh "git checkout origin/${params.branch}"
+            }
+        }
+
+        stage('Update Version and Artifacts') {
+            steps {
+                echo "Nothing to do here"
+            }
+        }
+
+        stage('Build') {
+            steps { 
+                sshagent (credentials: ['98572286-d7b9-495f-9425-74585d0c6813']) {
+                    sh "RELEASE_NAME=${params.releaseName} REPLACES_RELEASE_NAME=${params.replacesReleaseName}  SERVER_VERSION=${params.serverVersion} GITHUB_USERNAME=infinispan  build/jenkins/release-from-docker.sh"
+                    sh "TAG=${params.releaseName}"
+		    // Log image list for inspection
+                    sh "docker images"
+                }
+            }
+        }
+    }
+
+    post {
+/* Uncomment if you want email alert
+        failure {
+            echo "post build status: failure"
+            emailext to: '${DEFAULT_RECIPIENTS}', subject: '${DEFAULT_SUBJECT}', body: '${DEFAULT_CONTENT}'
+        }
+
+        success {
+            echo "post build status: success"
+            emailext to: '${DEFAULT_RECIPIENTS}', subject: '${DEFAULT_SUBJECT}', body: '${DEFAULT_CONTENT}'
+        }
+*/
+
+        cleanup {
+            sh 'git clean -fdx || echo "git clean failed, exit code $?"'
+        }
+    }
+}

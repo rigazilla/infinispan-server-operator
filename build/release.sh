@@ -81,7 +81,7 @@ operatorhub() {
   local upstreamDir=upstream-community-operators/infinispan
   local communityDir=community-operators/infinispan
 
-  rm -drf ${repoDir} || echo "Operatorhub repo does not exist"
+  rm -rf ${repoDir} || echo "Operatorhub repo does not exist"
   git clone git@github.com:${GITHUB_USERNAME}/community-operators.git ${repoDir}
   prepareBranches ${repoDir} ${OPERATORHUB_UPSTREAM_BRANCH} ${upstreamDir}
   prepareBranches ${repoDir} ${OPERATORHUB_COMMUNITY_BRANCH} ${communityDir}
