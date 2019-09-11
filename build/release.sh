@@ -148,13 +148,13 @@ sendPRs() {
   git checkout OPERATORHUB_UPSTREAM_BRANCH
   git push origin OPERATORHUB_UPSTREAM_BRANCH
   if [[ "${NO_PR}" != true ]] ; then
-    hub pull-request -m "[upstream] Updated Infinispan Operator to ${RELEASE_NAME}"
+    echo hub pull-request -m "[upstream] Updated Infinispan Operator to ${RELEASE_NAME}"
   fi
 
   git checkout OPERATORHUB_COMMUNITY_BRANCH
   git push origin OPERATORHUB_COMMUNITY_BRANCH
   if [[ "${NO_PR}" != true ]] ; then
-     hub pull-request -m "[community] Updated Infinispan Operator to ${RELEASE_NAME}"
+     echo hub pull-request -m "[community] Updated Infinispan Operator to ${RELEASE_NAME}"
   fi
 }
 

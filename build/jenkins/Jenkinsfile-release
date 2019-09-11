@@ -10,6 +10,7 @@ pipeline {
         string(name: 'replacesReleaseName', defaultValue: '', description: 'Release of the operator to be replaced')
         string(name: 'serverVersion', description: 'Version of Infinispan artifact to be used')
         booleanParam(name: 'dryRun', defaultValue: true, description: 'If true, we don\'t push things around')
+        booleanParam(name: 'noPr', defaultValue: false, description: 'If true, we don\'t push things around')
         gitParameter(name: 'branch', defaultValue: 'origin/master', branchFilter: 'origin/(.*)', type: 'PT_BRANCH', description: 'Branch to release from')
     }
 
@@ -30,7 +31,7 @@ pipeline {
         stage('Build') {
             steps { 
                 sshagent (credentials: ['98572286-d7b9-495f-9425-74585d0c6813']) {
-                    sh "RELEASE_NAME=${params.releaseName} REPLACES_RELEASE_NAME=${params.replacesReleaseName}  SERVER_VERSION=${params.serverVersion} GITHUB_USERNAME=infinispan  build/jenkins/release-from-docker.sh"
+                    sh "DRY_RUN=${params.dryRun} NO_PR=${params.noPr} RELEASE_NAME=${params.releaseName} REPLACES_RELEASE_NAME=${params.replacesReleaseName}  SERVER_VERSION=${params.serverVersion} GITHUB_USERNAME=infinispan  build/jenkins/release-from-docker.sh"
                     sh "TAG=${params.releaseName}"
 		    // Log image list for inspection
                     sh "docker images"
