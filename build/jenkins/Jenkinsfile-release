@@ -18,7 +18,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                sh "git checkout origin/${params.branch}"
+                sh "git checkout ${params.branch}"
+                sh "git reset --hard origin/${params.branch}"
             }
         }
 
@@ -29,13 +30,13 @@ pipeline {
         }
 
         stage('Build') {
-            steps { 
-                sshagent (credentials: ['98572286-d7b9-495f-9425-74585d0c6813']) {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: "8b2b2c8b-d04f-4df1-b0ec-d9b7e5d4e758", keyFileVariable: 'keyfile')]) { 
                     sh "DRY_RUN=${params.dryRun} NO_PR=${params.noPr} RELEASE_NAME=${params.releaseName} REPLACES_RELEASE_NAME=${params.replacesReleaseName}  SERVER_VERSION=${params.serverVersion} GITHUB_USERNAME=infinispan  build/jenkins/release-from-docker.sh"
+                }
                     sh "TAG=${params.releaseName}"
 		    // Log image list for inspection
                     sh "docker images"
-                }
             }
         }
     }
