@@ -24,17 +24,17 @@ type EndpointEncryption struct {
 
 // InfinispanContainerSpec specify resource requirements per container
 type InfinispanContainerSpec struct {
-	ExtraJvmOpts string `json:"extraJvmOpts"`
-	Memory       string `json:"memory"`
-	CPU          string `json:"cpu"`
+	ExtraJvmOpts *string `json:"extraJvmOpts,omitempty"`
+	Memory       *string `json:"memory,omitempty"`
+	CPU          *string `json:"cpu,omitempty"`
 }
 
 // InfinispanSpec defines the desired state of Infinispan
 type InfinispanSpec struct {
 	Replicas  int32                   `json:"replicas"`
 	Image     string                  `json:"image"`
-	Security  InfinispanSecurity      `json:"security"`
-	Container InfinispanContainerSpec `json:"container"`
+	Security  InfinispanSecurity      `json:"security,omitempty"`
+	Container InfinispanContainerSpec `json:"container,omitempty"`
 }
 
 // InfinispanCondition define a condition of the cluster

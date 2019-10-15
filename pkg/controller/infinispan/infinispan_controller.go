@@ -148,7 +148,7 @@ func (r *ReconcileInfinispan) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 
 		// Define a new deployment
-		dep := r.deploymentForInfinispan(infinispan, secret, configMap)
+		dep, err := r.deploymentForInfinispan(infinispan, secret, configMap)
 		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 		err = r.client.Create(context.TODO(), dep)
 		if err != nil {
@@ -246,26 +246,38 @@ func (r *ReconcileInfinispan) Reconcile(request reconcile.Request) (reconcile.Re
 	res := &found.Spec.Template.Spec.Containers[0].Resources
 	env := &found.Spec.Template.Spec.Containers[0].Env
 	ispnContr := &infinispan.Spec.Container
-	quantity := resource.MustParse(ispnContr.Memory)
-	if quantity.Cmp(res.Requests["memory"]) != 0 {
-		res.Requests["memory"] = quantity
-		updateNeeded = true
+	if ispnContr.Memory != nil {
+		quantity, err := resource.ParseQuantity(*ispnContr.Memory)
+		if err == nil {
+			if quantity.Cmp(res.Requests["memory"]) != 0 {
+				res.Requests["memory"] = quantity
+				updateNeeded = true
+			}
+		} else {
+			reqLogger.Error(err, "failed to parse Container.Memory: "+*ispnContr.Memory, "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+			return reconcile.Result{}, err
+		}
 	}
-
-	quantity = resource.MustParse(ispnContr.CPU)
-	if quantity.Cmp(res.Requests["cpu"]) != 0 {
-		res.Requests["cpu"] = quantity
-		updateNeeded = true
+	if ispnContr.CPU != nil {
+		quantity, err := resource.ParseQuantity(*ispnContr.CPU)
+		if err == nil {
+			if quantity.Cmp(res.Requests["cpu"]) != 0 {
+				res.Requests["cpu"] = quantity
+				updateNeeded = true
+			}
+		} else {
+			reqLogger.Error(err, "failed to parse Container.CPU: "+*ispnContr.CPU, "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+			return reconcile.Result{}, err
+		}
 	}
-
 	index := 0
 	for i, value := range *env {
 		if value.Name == "JAVA_OPTIONS" {
 			index = i
 		}
 	}
-	if (*env)[index].Value != ispnContr.ExtraJvmOpts {
-		(*env)[index].Value = ispnContr.ExtraJvmOpts
+	if ispnContr.ExtraJvmOpts != nil && (*env)[index].Value != *ispnContr.ExtraJvmOpts {
+		(*env)[index].Value = *ispnContr.ExtraJvmOpts
 		updateNeeded = true
 	}
 	if updateNeeded {
@@ -320,7 +332,7 @@ func (r *ReconcileInfinispan) Reconcile(request reconcile.Request) (reconcile.Re
 }
 
 // deploymentForInfinispan returns an infinispan Deployment object
-func (r *ReconcileInfinispan) deploymentForInfinispan(m *infinispanv1.Infinispan, secret *corev1.Secret, configMap *corev1.ConfigMap) *appsv1beta1.StatefulSet {
+func (r *ReconcileInfinispan) deploymentForInfinispan(m *infinispanv1.Infinispan, secret *corev1.Secret, configMap *corev1.ConfigMap) (*appsv1beta1.StatefulSet, error) {
 	// This field specifies the flavor of the
 	// Infinispan cluster. "" is plain community edition (vanilla)
 	ls := labelsForInfinispan(m.ObjectMeta.Name)
@@ -332,22 +344,32 @@ func (r *ReconcileInfinispan) deploymentForInfinispan(m *infinispanv1.Infinispan
 		imageName = DefaultImageName
 	}
 
-	memory := "512Mi"
-
-	if m.Spec.Container.Memory != "" {
-		memory = m.Spec.Container.Memory
+	memory, _ := resource.ParseQuantity("512Mi")
+	if m.Spec.Container.Memory != nil {
+		var err error
+		memory, err = resource.ParseQuantity(*m.Spec.Container.Memory)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	cpu := "0.5"
-
-	if m.Spec.Container.CPU != "" {
-		cpu = m.Spec.Container.CPU
+	cpu, _ := resource.ParseQuantity("0.5")
+	if m.Spec.Container.CPU != nil {
+		var err error
+		cpu, err = resource.ParseQuantity(*m.Spec.Container.CPU)
+		if err != nil {
+			return nil, err
+		}
 	}
 
+	extraJvmOpts := ""
+	if m.Spec.Container.ExtraJvmOpts != nil {
+		extraJvmOpts = *m.Spec.Container.ExtraJvmOpts
+	}
 	envVars := []corev1.EnvVar{
 		{Name: "CONFIG_PATH", Value: "/etc/config/infinispan.yaml"},
 		{Name: "IDENTITIES_PATH", Value: "/etc/security/identities.yaml"},
-		{Name: "JAVA_OPTIONS", Value: m.Spec.Container.ExtraJvmOpts},
+		{Name: "JAVA_OPTIONS", Value: extraJvmOpts},
 	}
 
 	// Adding additional variables listed in ADDITIONAL_VARS env var
@@ -414,8 +436,8 @@ func (r *ReconcileInfinispan) deploymentForInfinispan(m *infinispanv1.Infinispan
 							PeriodSeconds:       10,
 							SuccessThreshold:    1,
 							TimeoutSeconds:      80},
-						Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse(cpu),
-							"memory": resource.MustParse(memory)}},
+						Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": cpu,
+							"memory": memory}},
 						VolumeMounts: []corev1.VolumeMount{{
 							Name:      "config-volume",
 							MountPath: "/etc/config",
@@ -448,7 +470,7 @@ func (r *ReconcileInfinispan) deploymentForInfinispan(m *infinispanv1.Infinispan
 
 	// Set Infinispan instance as the owner and controller
 	controllerutil.SetControllerReference(m, dep, r.scheme)
-	return dep
+	return dep, nil
 }
 
 func getEncryptionSecretName(m *infinispanv1.Infinispan) string {

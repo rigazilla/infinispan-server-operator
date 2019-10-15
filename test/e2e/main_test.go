@@ -63,8 +63,8 @@ var DefaultSpec = ispnv1.Infinispan{
 	},
 	Spec: ispnv1.InfinispanSpec{
 		Container: ispnv1.InfinispanContainerSpec{
-			CPU:    CPU,
-			Memory: Memory,
+			CPU:    &CPU,
+			Memory: &Memory,
 		},
 		Image:    getEnvWithDefault("IMAGE", "registry.hub.docker.com/infinispan/server"),
 		Replicas: 1,
@@ -97,8 +97,8 @@ func TestClusterFormation(t *testing.T) {
 		},
 		Spec: ispnv1.InfinispanSpec{
 			Container: ispnv1.InfinispanContainerSpec{
-				CPU:    CPU,
-				Memory: Memory,
+				CPU:    &CPU,
+				Memory: &Memory,
 			},
 			Image:    getEnvWithDefault("IMAGE", "registry.hub.docker.com/infinispan/server"),
 			Replicas: 2,
@@ -126,8 +126,8 @@ func TestClusterFormationWithTLS(t *testing.T) {
 		},
 		Spec: ispnv1.InfinispanSpec{
 			Container: ispnv1.InfinispanContainerSpec{
-				CPU:    CPU,
-				Memory: Memory,
+				CPU:    &CPU,
+				Memory: &Memory,
 			},
 			Image:    getEnvWithDefault("IMAGE", "registry.hub.docker.com/infinispan/server"),
 			Replicas: 2,
@@ -148,7 +148,8 @@ func TestClusterFormationWithTLS(t *testing.T) {
 // Test if spec.container.cpu update is handled
 func TestContainerCPUUpdate(t *testing.T) {
 	var modifier = func(ispn *ispnv1.Infinispan) {
-		ispn.Spec.Container.CPU = "250m"
+		cpu := "250m"
+		ispn.Spec.Container.CPU = &cpu
 	}
 	var verifier = func(ss *appsv1beta1.StatefulSet) {
 		if resource.MustParse("250m") != ss.Spec.Template.Spec.Containers[0].Resources.Requests["cpu"] {
@@ -161,7 +162,8 @@ func TestContainerCPUUpdate(t *testing.T) {
 // Test if spec.container.memory update is handled
 func TestContainerMemoryUpdate(t *testing.T) {
 	var modifier = func(ispn *ispnv1.Infinispan) {
-		ispn.Spec.Container.Memory = "256Mi"
+		memory := "256Mi"
+		ispn.Spec.Container.Memory = &memory
 	}
 	var verifier = func(ss *appsv1beta1.StatefulSet) {
 		if resource.MustParse("256Mi") != ss.Spec.Template.Spec.Containers[0].Resources.Requests["memory"] {
@@ -173,7 +175,8 @@ func TestContainerMemoryUpdate(t *testing.T) {
 
 func TestContainerJavaOptsUpdate(t *testing.T) {
 	var modifier = func(ispn *ispnv1.Infinispan) {
-		ispn.Spec.Container.ExtraJvmOpts = "-XX:NativeMemoryTracking=summary"
+		ejo := "-XX:NativeMemoryTracking=summary"
+		ispn.Spec.Container.ExtraJvmOpts = &ejo
 	}
 	var verifier = func(ss *appsv1beta1.StatefulSet) {
 		env := ss.Spec.Template.Spec.Containers[0].Env
@@ -289,8 +292,8 @@ func TestExternalService(t *testing.T) {
 		},
 		Spec: ispnv1.InfinispanSpec{
 			Container: ispnv1.InfinispanContainerSpec{
-				CPU:    CPU,
-				Memory: Memory,
+				CPU:    &CPU,
+				Memory: &Memory,
 			},
 			Image:    getEnvWithDefault("IMAGE", "registry.hub.docker.com/infinispan/server"),
 			Replicas: 1,
@@ -362,8 +365,8 @@ func TestExternalServiceWithAuth(t *testing.T) {
 		Spec: ispnv1.InfinispanSpec{
 			Security: ispnv1.InfinispanSecurity{EndpointSecret: "conn-secret-test"},
 			Container: ispnv1.InfinispanContainerSpec{
-				CPU:    CPU,
-				Memory: Memory,
+				CPU:    &CPU,
+				Memory: &Memory,
 			},
 			Image:    getEnvWithDefault("IMAGE", "registry.hub.docker.com/infinispan/server"),
 			Replicas: 1,
