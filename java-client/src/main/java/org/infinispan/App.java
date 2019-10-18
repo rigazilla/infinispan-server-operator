@@ -122,7 +122,7 @@ public class App {
     private static void initSSLSocketFactory() {
 
         try {
-            sslContext = SSLContext.getInstance("TLS");
+            sslContext = SSLContext.getInstance("TLSv1.2");
             sslContext.init(null, _trustAllCerts, null);
         } catch (Exception e) {
         }
