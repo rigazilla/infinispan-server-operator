@@ -52,7 +52,7 @@ public class App {
             configuration = cb.addServer().host(host).port(port)
                     .clientIntelligence(ClientIntelligence.BASIC).security().authentication().enable()
                     .username("developer").password(password).realm("default").serverName("infinispan")
-                    .saslMechanism("DIGEST-MD5").saslQop(SaslQop.AUTH).ssl()
+                    .saslMechanism("DIGEST-MD5").saslQop(SaslQop.AUTH).ssl().sniHostName(host)
                     .build();
         } else {
             configuration = new ConfigurationBuilder().addServer().host(host).port(port)
