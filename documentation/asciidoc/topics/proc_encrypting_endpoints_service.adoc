@@ -3,13 +3,17 @@
 The {ispn_operator} can generate {openshift} service certificates that:
 
 * Consist of a certificate, `tls.crt`, and key, `tls.key`, in PEM format that
-{openshiftshort} stores in a secret.
+{openshiftshort} creates and stores in a secret.
 * Are signed by the {openshiftshort} CA, are valid for one year, and are
 automatically replaced before expiration.
 
+If the {ispn_operator} detects that a serving certificates service is available then it will
+automatically ask the certificates to the platform and enable TLS. In this case the certificates
+will be stored in a secret named `<clusterName>-cert-secret`
+
 .Procedure
 
-. Define custom resources to use service certificates for encryption.
+. If automatic dectect is not available user can define custom resources to use service certificates for encryption.
 +
 [source,options="nowrap",subs=attributes+]
 ----
