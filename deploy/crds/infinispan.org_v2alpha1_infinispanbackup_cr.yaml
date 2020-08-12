@@ -1,0 +1,7 @@
+apiVersion: infinispan.org/v2alpha1
+kind: InfinispanBackup
+metadata:
+  name: example-infinispanbackup
+spec:
+  # Add fields here
+  size: 3

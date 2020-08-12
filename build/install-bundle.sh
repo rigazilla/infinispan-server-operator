@@ -8,6 +8,7 @@ OPERATOR_SOURCE_INSTALL_FILES=(
   "deploy/clusterrole_binding.yaml"
   "deploy/crds/infinispan.org_infinispans_crd.yaml"
   "deploy/crds/infinispan.org_caches_crd.yaml"
+  "deploy/crds/infinispan.org_infinispanbackups_crd.yaml"
   "deploy/operator.yaml"
 )
 
