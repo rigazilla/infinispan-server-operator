@@ -1,0 +1,16 @@
+{
+    "go.testEnvVars": {
+     "KUBECONFIG": "/home/rigazilla/.kube/config",
+     //"KUBECONFIG": "/home/rigazilla/go/src/github.com/infinispan/infinispan-operator/openshift.local.clusterup/openshift-apiserver/admin.kubeconfig",
+     //"KUBECONFIG": "/home/rigazilla/quicklab/auth/kubeconfig",
+     //"KUBECONFIG": "/home/rigazilla/quicklab/0721/auth/kubeconfig",
+     "WATCH_NAMESPACE": "namespace-for-testing",
+},
+"files.exclude": {
+    "**/.classpath": true,
+    "**/.project": true,
+    "**/.settings": true,
+    "**/.factorypath": true
+},
+"git.ignoreLimitWarning": true
+}
