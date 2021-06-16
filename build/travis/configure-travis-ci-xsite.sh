@@ -24,11 +24,11 @@ if ! validateYQ; then
 fi
 
 if ! [ -x "$(command -v kind)" ]; then
-  curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/"${KIND_VERSION}"/kind-linux-amd64 && chmod +x kind && mkdir -p /tmp/k8s/bin && mv kind /tmp/k8s/bin/
+  curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/"${KIND_VERSION}"/kind-linux-arm64 && chmod +x kind && mkdir -p /tmp/k8s/bin && mv kind /tmp/k8s/bin/
   PATH=/tmp/k8s/bin:$PATH
 fi
 if ! [ -x "$(command -v kubectl)" ]; then
-  curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && mkdir -p /tmp/k8s/bin && mv kubectl /tmp/k8s/bin/
+  curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/arm64/kubectl && chmod +x kubectl && mkdir -p /tmp/k8s/bin && mv kubectl /tmp/k8s/bin/
   PATH=/tmp/k8s/bin:$PATH
 fi
 # This requires for local (outside Travis CI) cleanup and run
