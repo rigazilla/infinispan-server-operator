@@ -2,7 +2,7 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
-    image: rossgeorgiev/kind-node-arm64:v1.20.0
+    image: rossgeorgiev/kind-node-arm64:latest
     extraPortMappings:
       - containerPort: 30222
         hostPort: 11222
